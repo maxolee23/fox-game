@@ -1,3 +1,5 @@
+/* general */
+
 * {
   box-sizing: border-box;
 }
@@ -83,17 +85,19 @@ body {
 
 /* modal */
 
+.modal-inner {
+  background-color: blueviolet;
+  color: white;
+  padding: 20px;
+  font-size: 20px;
+  border-radius: 5px;
+}
+
 .modal {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  background-color: blueviolet;
-  color: white;
-  padding: 25px;
-  font-size: 20px;
-  font-weight: bold;
-  border-radius: 12px;
 }
 
 .modal:empty {
@@ -103,6 +107,8 @@ body {
 .modal-inner:empty {
   display: none;
 }
+
+/* the fox */
 
 .fox {
   position: absolute;

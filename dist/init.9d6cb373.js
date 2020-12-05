@@ -117,37 +117,309 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"gameState.js":[function(require,module,exports) {
+})({"constants.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.getNextPoopTime = exports.getNextDieTime = exports.getNextHungerTime = exports.NIGHT_LENGTH = exports.DAY_LENGTH = exports.RAIN_CHANCE = exports.TICK_RATE = exports.SCENES = exports.ICONS = void 0;
+const ICONS = ["fish", "poop", "weather"];
+exports.ICONS = ICONS;
+const SCENES = ["day", "rain"];
+exports.SCENES = SCENES;
+const TICK_RATE = 3000;
+exports.TICK_RATE = TICK_RATE;
+const RAIN_CHANCE = 0.2;
+exports.RAIN_CHANCE = RAIN_CHANCE;
+const DAY_LENGTH = 60;
+exports.DAY_LENGTH = DAY_LENGTH;
+const NIGHT_LENGTH = 5;
+exports.NIGHT_LENGTH = NIGHT_LENGTH;
+
+const getNextHungerTime = clock => Math.floor(Math.random() * 3) + 8 + clock;
+
+exports.getNextHungerTime = getNextHungerTime;
+
+const getNextDieTime = clock => Math.floor(Math.random() * 3) + 3 + clock;
+
+exports.getNextDieTime = getNextDieTime;
+
+const getNextPoopTime = clock => Math.floor(Math.random() * 3) + 8 + clock;
+
+exports.getNextPoopTime = getNextPoopTime;
+},{}],"ui.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.writeModal = exports.togglePoopBag = exports.modScene = exports.modFox = void 0;
+
+const modFox = function modFox(state) {
+  document.querySelector(".fox").className = `fox fox-${state}`;
+};
+
+exports.modFox = modFox;
+
+const modScene = function modScene(state) {
+  document.querySelector(".game").className = `game ${state}`;
+};
+
+exports.modScene = modScene;
+
+const togglePoopBag = function togglePoopBag(show) {
+  document.querySelector(".poop-bag").classList.toggle("hidden", !show);
+};
+
+exports.togglePoopBag = togglePoopBag;
+
+const writeModal = function writeModal(text = "") {
+  document.querySelector(".modal").innerHTML = `<div class="modal-inner">${text}</div>`;
+};
+
+exports.writeModal = writeModal;
+},{}],"gameState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.handleUserAction = void 0;
+
+var _constants = require("./constants");
+
+var _ui = require("./ui");
+
 const gameState = {
   current: "INIT",
   clock: 1,
+  wakeTime: -1,
+  sleepTime: -1,
+  hungryTime: -1,
+  dieTime: -1,
+  poopTime: -1,
+  timeToStartCelebrating: -1,
+  timeToEndCelebrating: -1,
+  scene: 0,
 
   tick() {
     this.clock++;
-    console.log("clock", this.clock);
+
+    if (this.clock === this.wakeTime) {
+      this.wake();
+    } else if (this.clock === this.sleepTime) {
+      this.sleep();
+    } else if (this.clock === this.hungryTime) {
+      this.getHungry();
+    } else if (this.clock === this.timeToStartCelebrating) {
+      this.startCelebrating();
+    } else if (this.clock === this.timeToEndCelebrating) {
+      this.endCelebrating();
+    } else if (this.clock === this.poopTime) {
+      this.poop();
+    } else if (this.clock === this.dieTime) {
+      this.die();
+    }
+
     return this.clock;
+  },
+
+  startGame() {
+    this.current = "HATCHING";
+    this.wakeTime = this.clock + 3;
+    (0, _ui.modFox)("egg");
+    (0, _ui.modScene)("day");
+    (0, _ui.writeModal)();
+  },
+
+  wake() {
+    this.current = "IDLING";
+    this.wakeTime = -1;
+    (0, _ui.modFox)("idling");
+    this.scene = Math.random() > _constants.RAIN_CHANCE ? 0 : 1;
+    (0, _ui.modScene)(_constants.SCENES[this.scene]);
+    this.determineFoxState();
+    this.sleepTime = this.clock + _constants.DAY_LENGTH;
+    this.hungryTime = (0, _constants.getNextHungerTime)(this.clock);
+  },
+
+  handleUserAction(icon) {
+    // can't do actions while in these states
+    if (["SLEEP", "FEEDING", "CELEBRATING", "HATCHING"].includes(this.current)) {
+      // do nothing
+      return;
+    }
+
+    if (this.current === "INIT" || this.current === "DEAD") {
+      this.startGame();
+      return;
+    } // execute the currently selected action
+
+
+    switch (icon) {
+      case "weather":
+        this.changeWeather();
+        break;
+
+      case "poop":
+        this.cleanUpPoop();
+        break;
+
+      case "fish":
+        this.feed();
+        break;
+    }
+  },
+
+  changeWeather() {
+    this.scene = (1 + this.scene) % _constants.SCENES.length;
+    (0, _ui.modScene)(_constants.SCENES[this.scene]);
+    this.determineFoxState();
+  },
+
+  cleanUpPoop() {
+    if (this.current === "POOPING") {
+      this.dieTime = -1;
+      (0, _ui.togglePoopBag)(true);
+      this.startCelebrating();
+      this.hungryTime = (0, _constants.getNextHungerTime)(this.clock);
+    }
+  },
+
+  poop() {
+    this.current = "POOPING";
+    this.poopTime = -1;
+    this.dieTime = (0, _constants.getNextDieTime)(this.clock);
+    (0, _ui.modFox)("pooping");
+  },
+
+  feed() {
+    // can only feed when hungry
+    if (this.current !== "HUNGRY") {
+      return;
+    }
+
+    this.current = "FEEDING";
+    this.dieTime = -1;
+    this.poopTime = (0, _constants.getNextPoopTime)(this.clock);
+    (0, _ui.modFox)("eating");
+    this.timeToStartCelebrating = this.clock + 2;
+  },
+
+  startCelebrating() {
+    this.current = "CELEBRATING";
+    (0, _ui.modFox)("celebrate");
+    this.timeToStartCelebrating = -1;
+    this.timeToEndCelebrating = this.clock + 2;
+  },
+
+  endCelebrating() {
+    this.timeToEndCelebrating = -1;
+    this.current = "IDLING";
+    this.determineFoxState();
+    (0, _ui.togglePoopBag)(false);
+  },
+
+  determineFoxState() {
+    if (this.current === "IDLING") {
+      if (_constants.SCENES[this.scene] === "rain") {
+        (0, _ui.modFox)("rain");
+      } else {
+        (0, _ui.modFox)("idling");
+      }
+    }
+  },
+
+  clearTimes() {
+    this.wakeTime = -1;
+    this.sleepTime = -1;
+    this.hungryTime = -1;
+    this.dieTime = -1;
+    this.poopTime = -1;
+    this.timeToStartCelebrating = -1;
+    this.timeToEndCelebrating = -1;
+  },
+
+  sleep() {
+    this.current = "SLEEP";
+    (0, _ui.modFox)("sleep");
+    (0, _ui.modScene)("night");
+    this.clearTimes();
+    this.wakeTime = this.clock + _constants.NIGHT_LENGTH;
+  },
+
+  getHungry() {
+    this.current = "HUNGRY";
+    this.dieTime = (0, _constants.getNextDieTime)(this.clock);
+    this.hungryTime = -1;
+    (0, _ui.modFox)("hungry");
+  },
+
+  die() {
+    this.current = "DEAD";
+    (0, _ui.modScene)("dead");
+    (0, _ui.modFox)("dead");
+    this.clearTimes();
+    (0, _ui.writeModal)("The fox died :( <br/> Press the middle button to start");
   }
 
 };
+const handleUserAction = gameState.handleUserAction.bind(gameState);
+exports.handleUserAction = handleUserAction;
 var _default = gameState;
 exports.default = _default;
-},{}],"init.js":[function(require,module,exports) {
+},{"./constants":"constants.js","./ui":"ui.js"}],"buttons.js":[function(require,module,exports) {
 "use strict";
 
-var _gameState = _interopRequireDefault(require("./gameState"));
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = initButtons;
+
+var _constants = require("./constants");
+
+const toggleHighlighted = (icon, show) => document.querySelector(`.${_constants.ICONS[icon]}-icon`).classList.toggle("highlighted", show);
+
+function initButtons(handleUserAction) {
+  let selectedIcon = 0;
+
+  function buttonClick({
+    target
+  }) {
+    if (target.classList.contains("left-btn")) {
+      toggleHighlighted(selectedIcon, false);
+      selectedIcon = (2 + selectedIcon) % _constants.ICONS.length;
+      toggleHighlighted(selectedIcon, true);
+    } else if (target.classList.contains("right-btn")) {
+      toggleHighlighted(selectedIcon, false);
+      selectedIcon = (1 + selectedIcon) % _constants.ICONS.length;
+      toggleHighlighted(selectedIcon, true);
+    } else {
+      handleUserAction(_constants.ICONS[selectedIcon]);
+    }
+  }
+
+  document.querySelector(".buttons").addEventListener("click", buttonClick);
+}
+},{"./constants":"constants.js"}],"init.js":[function(require,module,exports) {
+"use strict";
+
+var _gameState = _interopRequireWildcard(require("./gameState"));
+
+var _buttons = _interopRequireDefault(require("./buttons"));
+
+var _constants = require("./constants");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const TICK_RATE = 3000;
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 async function init() {
   console.log("starting game");
+  (0, _buttons.default)(_gameState.handleUserAction);
   let nextTimeToTick = Date.now();
 
   function nextAnimationFrame() {
@@ -156,7 +428,7 @@ async function init() {
     if (nextTimeToTick <= now) {
       _gameState.default.tick();
 
-      nextTimeToTick = now + TICK_RATE;
+      nextTimeToTick = now + _constants.TICK_RATE;
     }
 
     requestAnimationFrame(nextAnimationFrame);
@@ -166,7 +438,7 @@ async function init() {
 }
 
 init();
-},{"./gameState":"gameState.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./gameState":"gameState.js","./buttons":"buttons.js","./constants":"constants.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -194,7 +466,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57059" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60111" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
