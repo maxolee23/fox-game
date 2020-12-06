@@ -361,7 +361,7 @@ const gameState = {
     (0, _ui.modScene)("dead");
     (0, _ui.modFox)("dead");
     this.clearTimes();
-    (0, _ui.writeModal)("The fox died :( <br/> Press the middle button to start");
+    (0, _ui.writeModal)("The fox died :( <br/> Press the middle button to restart");
   }
 
 };
@@ -466,7 +466,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60111" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60284" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

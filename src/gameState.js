@@ -163,7 +163,7 @@ const gameState = {
     modScene("dead");
     modFox("dead");
     this.clearTimes();
-    writeModal("The fox died :( <br/> Press the middle button to start");
+    writeModal("The fox died :( <br/> Press the middle button to restart");
   },
 };
 
