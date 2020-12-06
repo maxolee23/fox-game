@@ -1,3 +1,5 @@
+/* general */
+
 * {
   box-sizing: border-box;
 }
@@ -12,7 +14,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: absolute;
+  position: relative;
   top: 0;
   left: 0;
   right: 0;
@@ -83,17 +85,21 @@ body {
 
 /* modal */
 
+.modal-inner {
+  background-color: blueviolet;
+  font-family: monospace;
+  text-align: center;
+  color: white;
+  padding: 20px;
+  font-size: 20px;
+  border-radius: 5px;
+}
+
 .modal {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  background-color: blueviolet;
-  color: white;
-  padding: 25px;
-  font-size: 20px;
-  font-weight: bold;
-  border-radius: 12px;
 }
 
 .modal:empty {
@@ -103,6 +109,8 @@ body {
 .modal-inner:empty {
   display: none;
 }
+
+/* the fox */
 
 .fox {
   position: absolute;
@@ -146,4 +154,15 @@ body {
 .fox-dead {
   top: 380px;
   left: 243px;
+}
+
+.navbar {
+  background-color: transparent;
+  color: whitesmoke;
+  font-size: 30px;
+  font-family: monospace;
+  text-align: center;
+  padding-bottom: 5px;
+  padding-top: 10px;
+  margin-bottom: 10px;
 }
